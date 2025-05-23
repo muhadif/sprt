@@ -23,7 +23,7 @@ sprt is a command-line interface (CLI) tool for interacting with Spotify. It all
 You can install sprt with a single command:
 
 ```bash
-curl -sSL https://instl.sh/muhadif/sprt | bash
+curl -sSL instl.sh/muhadif/sprt | bash
 ```
 
 This will automatically download and install the latest version of sprt for your platform.
