@@ -219,8 +219,8 @@ func (l *lyricUseCase) DisplaySyncedLyrics(ctx context.Context, lyrics *Lyrics, 
 		currentLineIndex = i
 	}
 
-	// Create a ticker to poll Spotify every 3 seconds
-	ticker := time.NewTicker(1 * time.Second)
+	// Create a ticker to poll Spotify every 500 msseconds
+	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
 	// Display the lyrics synchronized with the music
@@ -250,7 +250,6 @@ func (l *lyricUseCase) DisplaySyncedLyrics(ctx context.Context, lyrics *Lyrics, 
 				}
 
 				if track.Title != lyrics.Name {
-					fmt.Printf("\rLyrics for %s by %s", track.Title, track.Artist)
 					lyrics, err = l.GetLyrics(ctx, track.Artist, track.Title, track.Album)
 					if err != nil {
 						fmt.Printf("\rError getting lyrics: %v", err)
@@ -277,9 +276,9 @@ func (l *lyricUseCase) DisplaySyncedLyrics(ctx context.Context, lyrics *Lyrics, 
 		case <-ctx.Done():
 			return
 		case <-updateCh:
-			// Check if enough time has passed since the last update (1 second)
+			// Check if enough time has passed since the last update (500 millisecond)
 			// This prevents the blinking effect caused by too frequent updates
-			if time.Since(lastUpdateTime) < time.Second {
+			if time.Since(lastUpdateTime) < 500*time.Millisecond {
 				continue // Skip this update if it's too soon
 			}
 			lastUpdateTime = time.Now() // Update the last update time
