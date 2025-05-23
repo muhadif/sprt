@@ -62,7 +62,6 @@ func (l *lyricUseCase) GetLyrics(ctx context.Context, artist, title, album strin
 	l.cacheLock.RUnlock()
 
 	if found {
-		fmt.Println("Using cached lyrics for", title, "by", artist)
 		return cachedLyrics, nil
 	}
 
