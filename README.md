@@ -207,6 +207,7 @@ If lyrics are not found for a track:
 ## Linux Desktop Integration
 
 ### GNOME Shell Integration with Executor
+![image](https://github.com/user-attachments/assets/469d39f2-5420-4d73-b4e2-6cf9a1741e00)
 
 sprt writes the current lyric to `/tmp/current-lyric.txt` when you run the `sprt lyric pipe-lyric` command. You can display these lyrics on your GNOME desktop using the [Executor extension](https://extensions.gnome.org/extension/2932/executor/).
 
