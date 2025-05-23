@@ -1,0 +1,47 @@
+# GoReleaser configuration for sprt
+
+# Build settings
+builds:
+  - main: ./cmd/sprt/main.go
+    id: "sprt"
+    binary: sprt
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+# Archive settings
+archives:
+  - id: sprt
+    name_template: "sprt_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
+    files:
+      - README.md
+      - LICENSE
+      - instl.sh
+
+# Checksum settings
+checksum:
+  name_template: "sprt_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+# Snapshot settings
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+# Changelog settings
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
