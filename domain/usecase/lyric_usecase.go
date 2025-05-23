@@ -298,9 +298,7 @@ func (l *lyricUseCase) DisplaySyncedLyrics(ctx context.Context, lyrics *Lyrics, 
 			// Display the current line
 			if currentLineIndex < len(lyrics.Lines) {
 				line := lyrics.Lines[currentLineIndex]
-				// Clear the line and display the current lyric
-				fmt.Print("\r\033[K") // Clear the line
-				fmt.Print(line.Text)
+				fmt.Print("\r\033[K", line.Text)
 
 				// Write the current line to a file for external use
 				err := os.WriteFile("/tmp/current-lyric.txt", []byte(line.Text), 0644)
