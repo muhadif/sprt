@@ -23,7 +23,6 @@ archives:
     format: tar.gz
     files:
       - README.md
-      - LICENSE
 
 # Checksum settings
 checksum:
