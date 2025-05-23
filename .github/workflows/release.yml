@@ -23,9 +23,6 @@ jobs:
           go-version: '>=1.19'
           cache: true
       
-      - name: Make instl.sh executable
-        run: chmod +x instl.sh
-      
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         with:

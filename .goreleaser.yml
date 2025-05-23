@@ -24,7 +24,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - instl.sh
 
 # Checksum settings
 checksum:
