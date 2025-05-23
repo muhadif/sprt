@@ -124,33 +124,6 @@ To add new features to sprt:
 3. Add new commands in the `cmd/sprt/cmd` package
 4. Update the README.md with documentation for the new features
 
-### Release Process
-
-sprt uses [GoReleaser](https://goreleaser.com/) and GitHub Actions to automate the release process:
-
-1. Update the code and commit your changes
-2. Create and push a new tag with the version number:
-   ```bash
-   git tag -a v1.0.0 -m "Release v1.0.0"
-   git push origin v1.0.0
-   ```
-3. The GitHub Actions workflow will automatically:
-   - Build binaries for Linux and macOS (both amd64 and arm64)
-   - Create archives with the binary, README, and installation script
-   - Generate checksums for verification
-   - Create a GitHub release with the generated assets
-   - Generate release notes from commit messages
-
-To test the release process locally (without publishing):
-
-```bash
-# Install GoReleaser if you don't have it
-go install github.com/goreleaser/goreleaser@latest
-
-# Run GoReleaser in snapshot mode (no actual release)
-goreleaser release --snapshot --clean
-```
-
 ## Architecture
 
 The application is built using clean architecture principles, with the following layers:
