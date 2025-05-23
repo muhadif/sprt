@@ -45,21 +45,6 @@ make install
 
 This will build the application and install it to `/usr/local/bin/sprt`.
 
-### Using the Installation Script
-
-1. Download the latest release for your platform (Linux or macOS)
-2. Extract the archive:
-
-```bash
-tar -xzf sprt-[platform].tar.gz
-```
-
-3. Run the installation script:
-
-```bash
-sudo ./instl.sh
-```
-
 ### Building from Source
 
 1. Clone the repository:
