@@ -47,7 +47,6 @@ func displaySyncedLyrics() error {
 	lyrics, err := lyricUseCase.GetLyrics(context.Background(), track.ArtistNames[0], track.Title, track.Album)
 	if err != nil {
 		fmt.Printf("No lyric found for %s by %s\n", track.Title, track.Artist)
-		return nil
 	}
 
 	// Create a context that can be cancelled
