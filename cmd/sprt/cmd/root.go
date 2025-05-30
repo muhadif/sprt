@@ -72,7 +72,7 @@ func Execute() {
 // showTUIMenu displays the TUI menu and executes the selected command
 func showTUIMenu() {
 	// Run the main menu with transitions
-	choice, err := tui.RunMenuWithTransition(authUseCase, playerUseCase, lyricUseCase)
+	choice, err := tui.RunMenuWithTransition(authUseCase, playerUseCase, lyricUseCase, version, date, commit)
 	if err != nil {
 		fmt.Printf("Error running menu: %v\n", err)
 		os.Exit(1)

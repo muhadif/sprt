@@ -21,9 +21,12 @@ type MenuWithTransitionModel struct {
 	cancel        context.CancelFunc
 	windowWidth   int
 	windowHeight  int
+	version       string
+	buildDate     string
+	commitHash    string
 }
 
-func NewMenuWithTransitionModel(authUseCase usecase.AuthUseCase, playerUseCase usecase.PlayerUseCase, lyricUseCase usecase.LyricUseCase) *MenuWithTransitionModel {
+func NewMenuWithTransitionModel(authUseCase usecase.AuthUseCase, playerUseCase usecase.PlayerUseCase, lyricUseCase usecase.LyricUseCase, version, buildDate, commitHash string) *MenuWithTransitionModel {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &MenuWithTransitionModel{
@@ -36,6 +39,9 @@ func NewMenuWithTransitionModel(authUseCase usecase.AuthUseCase, playerUseCase u
 		cancel:        cancel,
 		windowWidth:   80,
 		windowHeight:  24,
+		version:       version,
+		buildDate:     buildDate,
+		commitHash:    commitHash,
 	}
 }
 
@@ -120,12 +126,8 @@ func (m *MenuWithTransitionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, cmd
 
 				case "version":
-					// Get version information from somewhere
-					version := "1.0.0"
-					buildDate := "2023-01-01"
-					commitHash := "abcdef"
-
-					nextScreen = NewVersionModel(version, buildDate, commitHash)
+					// Use the version information from the struct
+					nextScreen = NewVersionModel(m.version, m.buildDate, m.commitHash)
 
 				default:
 					// Unknown command, stay on the menu
@@ -183,8 +185,8 @@ func parseTrackInfo(trackInfo string) (title, artist, album string) {
 }
 
 // RunMenuWithTransition runs the menu UI with transitions
-func RunMenuWithTransition(authUseCase usecase.AuthUseCase, playerUseCase usecase.PlayerUseCase, lyricUseCase usecase.LyricUseCase) (string, error) {
-	model := NewMenuWithTransitionModel(authUseCase, playerUseCase, lyricUseCase)
+func RunMenuWithTransition(authUseCase usecase.AuthUseCase, playerUseCase usecase.PlayerUseCase, lyricUseCase usecase.LyricUseCase, version, buildDate, commitHash string) (string, error) {
+	model := NewMenuWithTransitionModel(authUseCase, playerUseCase, lyricUseCase, version, buildDate, commitHash)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 
 	finalModel, err := p.Run()
