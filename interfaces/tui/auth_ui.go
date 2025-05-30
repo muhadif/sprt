@@ -148,7 +148,7 @@ func (m *AuthModel) View() string {
 	} else if m.step == 3 {
 		// Completed
 		content += promptStyle.Render("Authentication completed successfully!") + "\n\n"
-		content += infoStyle.Render("You can now use the Spotify CLI.")
+		content += infoStyle.Render("You can now use the sprt.")
 	}
 
 	s += border.Render(content)

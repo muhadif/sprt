@@ -26,8 +26,8 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "sprt",
-	Short: "Spotify CLI - A command-line interface for Spotify",
-	Long: `Spotify CLI is a command-line interface for interacting with Spotify.
+	Short: "sprt - A command-line interface for Spotify",
+	Long: `sprt is a command-line interface for interacting with Spotify.
 It allows you to authenticate with Spotify, get information about your currently playing track,
 and display synchronized lyrics for the current track.`,
 }

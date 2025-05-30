@@ -86,7 +86,7 @@ func (m MenuModel) View() string {
 	descriptionStyle := GetInfoStyle()
 
 	// Build the view
-	s := titleStyle.Render("Spotify CLI") + "\n\n"
+	s := titleStyle.Render("sprt") + "\n\n"
 
 	for i, item := range m.items {
 		cursor := " "

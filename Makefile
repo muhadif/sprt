@@ -1,4 +1,4 @@
-# Makefile for sprt - Spotify CLI Client
+# Makefile for sprt - sprt Client
 
 # Variables
 BINARY_NAME=sprt

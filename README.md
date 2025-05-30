@@ -1,5 +1,5 @@
-# sprt - Spotify CLI Client
-
+# sprt - Sportify Client TUI
+![img.png](ss.png)
 sprt is a command-line interface (CLI) tool for interacting with Spotify. It allows you to authenticate with Spotify, get information about your currently playing track, and display synchronized lyrics for the current track.
 
 ## Features

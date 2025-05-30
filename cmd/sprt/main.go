@@ -1,4 +1,4 @@
-// Package main is the entry point for the Spotify CLI application.
+// Package main is the entry point for the sprt application.
 package main
 
 import (

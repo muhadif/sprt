@@ -57,7 +57,7 @@ func (m VersionModel) View() string {
 	border := GetBorderStyle(m.windowWidth)
 
 	// Build the view
-	s := titleStyle.Render("Spotify CLI Version Information") + "\n\n"
+	s := titleStyle.Render("sprt Version Information") + "\n\n"
 
 	// Version info
 	versionInfo := ""
