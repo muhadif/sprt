@@ -73,6 +73,7 @@ func initCurrentCommand() {
 func initLyricCommand() {
 	rootCmd.AddCommand(lyricCmd)
 	lyricCmd.AddCommand(pipeLyricCmd)
+	lyricCmd.AddCommand(showLyricCmd)
 }
 
 // Version command
