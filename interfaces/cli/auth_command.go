@@ -86,6 +86,12 @@ func (c *AuthCommand) TestCurrentlyPlaying() error {
 		return fmt.Errorf("failed to get currently playing track: %w", err)
 	}
 
+	// Check if no track is playing
+	if track == "No track currently playing" {
+		fmt.Println("No track is currently playing on Spotify. Please start playing a track and try again.")
+		return nil
+	}
+
 	fmt.Println(track)
 	return nil
 }

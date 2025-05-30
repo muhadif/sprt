@@ -10,6 +10,7 @@ import (
 
 	"github.com/muhadif/sprt/domain/usecase"
 	httpinterface "github.com/muhadif/sprt/interfaces/http"
+	"github.com/muhadif/sprt/interfaces/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -44,16 +45,10 @@ var authTestCmd = &cobra.Command{
 func initAuth(authUseCase usecase.AuthUseCase) error {
 	fmt.Println("Initializing Spotify authentication...")
 
-	// Prompt for client ID
-	clientID, err := promptInput("Enter your Spotify Client ID: ")
+	// Use the TUI to get client ID and client secret
+	clientID, clientSecret, err := tui.RunAuthUI()
 	if err != nil {
-		return fmt.Errorf("failed to read client ID: %w", err)
-	}
-
-	// Prompt for client secret
-	clientSecret, err := promptInput("Enter your Spotify Client Secret: ")
-	if err != nil {
-		return fmt.Errorf("failed to read client secret: %w", err)
+		return fmt.Errorf("failed to get authentication credentials: %w", err)
 	}
 
 	// Initialize authentication with the provided credentials
@@ -61,10 +56,6 @@ func initAuth(authUseCase usecase.AuthUseCase) error {
 	if err != nil {
 		return fmt.Errorf("failed to initialize authentication: %w", err)
 	}
-
-	// Display the authorization URL
-	fmt.Println("\nPlease open the following URL in your browser to authorize the application:")
-	fmt.Println(authURL)
 
 	// Start the callback server
 	callbackServer := httpinterface.NewCallbackServer(authUseCase)
@@ -75,12 +66,11 @@ func initAuth(authUseCase usecase.AuthUseCase) error {
 		}
 	}()
 
-	fmt.Println("\nWaiting for authorization...")
-	fmt.Println("After authorizing, you will be redirected to a local callback URL.")
-	fmt.Println("Press Enter after you have completed the authorization process...")
-
-	// Wait for user to press Enter
-	_, _ = bufio.NewReader(os.Stdin).ReadString('\n')
+	// Use the TUI to display the authorization URL and wait for completion
+	err = tui.RunAuthWaitingUI(authURL, clientID, clientSecret)
+	if err != nil {
+		return fmt.Errorf("error in authentication UI: %w", err)
+	}
 
 	// Stop the callback server
 	ctx := context.Background()
@@ -99,6 +89,12 @@ func testCurrentlyPlaying(authUseCase usecase.AuthUseCase) error {
 	track, err := authUseCase.GetCurrentlyPlaying(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to get currently playing track: %w", err)
+	}
+
+	// Check if no track is playing
+	if track == "No track currently playing" {
+		// Show waiting UI instead of just printing the message
+		return tui.RunWaitingTrackUI(authUseCase)
 	}
 
 	fmt.Println(track)

@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/muhadif/sprt/domain/usecase"
+	"github.com/muhadif/sprt/interfaces/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -53,6 +55,38 @@ func InitializeCommands(auth usecase.AuthUseCase, player usecase.PlayerUseCase, 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	// Check if any arguments were provided
+	if len(os.Args) > 1 {
+		// If arguments were provided, use the standard Cobra command execution
+		if err := rootCmd.Execute(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// If no arguments were provided, show the TUI menu
+	showTUIMenu()
+}
+
+// showTUIMenu displays the TUI menu and executes the selected command
+func showTUIMenu() {
+	// Run the main menu with transitions
+	choice, err := tui.RunMenuWithTransition(authUseCase, playerUseCase, lyricUseCase)
+	if err != nil {
+		fmt.Printf("Error running menu: %v\n", err)
+		os.Exit(1)
+	}
+
+	// If the user chose to quit, exit
+	if choice == "quit" || choice == "" {
+		return
+	}
+
+	// Execute the selected command
+	// Split the choice into separate arguments
+	args := strings.Split(choice, " ")
+	os.Args = append(os.Args, args...)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -81,9 +115,8 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version information",
 	Long:  `Print the version, build date, and commit hash of the application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("sprt version %s\n", version)
-		fmt.Printf("Built on %s from commit %s\n", date, commit)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return tui.RunVersionUI(version, date, commit)
 	},
 }
 

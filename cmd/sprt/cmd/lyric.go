@@ -47,6 +47,11 @@ func displayLyricsWithUI() error {
 	// Get the currently playing track
 	track, err := playerUseCase.GetCurrentlyPlayingDetails(context.Background())
 	if err != nil {
+		// Check if the error is "no track currently playing"
+		if err.Error() == "no track currently playing" {
+			// Show waiting UI instead of returning an error
+			return tui.RunWaitingTrackUI(authUseCase)
+		}
 		return fmt.Errorf("failed to get currently playing track: %w", err)
 	}
 
@@ -73,12 +78,14 @@ func displaySyncedLyrics() error {
 	// Create the player use case
 	playerUseCase := usecase.NewPlayerUseCase(authUseCase)
 
-	// Create the lyric use case
-	lyricUseCase := usecase.NewLyricUseCase()
-
 	// Get the currently playing track
 	track, err := playerUseCase.GetCurrentlyPlayingDetails(context.Background())
 	if err != nil {
+		// Check if the error is "no track currently playing"
+		if err.Error() == "no track currently playing" {
+			// Show waiting UI instead of returning an error
+			return tui.RunWaitingTrackUI(authUseCase)
+		}
 		return fmt.Errorf("failed to get currently playing track: %w", err)
 	}
 
@@ -96,26 +103,6 @@ func displaySyncedLyrics() error {
 		os.Exit(0)
 	}()
 
-	// Get the lyric updates channel
-	updateCh := lyricUseCase.GetLyricChannel(ctx, track.ProgressMs, playerUseCase)
-
-	// Process updates from the channel
-	for update := range updateCh {
-		if update.IsError {
-			fmt.Printf("\r\033[K%s", update.ErrorMsg)
-			continue
-		}
-
-		fmt.Print("\r\033[K", update.Text)
-
-		// Write the current line to a file for external use
-		if update.Text != "" {
-			err := os.WriteFile("/tmp/current-lyric.txt", []byte(update.Text), 0644)
-			if err != nil {
-				fmt.Printf("\nError writing to file: %v", err)
-			}
-		}
-	}
-
-	return nil
+	// Run the pipe lyric UI
+	return tui.RunPipeLyricUI(ctx, track.ProgressMs, playerUseCase)
 }

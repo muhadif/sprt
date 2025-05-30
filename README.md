@@ -7,7 +7,10 @@ sprt is a command-line interface (CLI) tool for interacting with Spotify. It all
 - Authenticate with Spotify using the Authorization Code Flow
 - Store authentication tokens securely in a local file
 - Get information about your currently playing track
-- Display synchronized lyrics for the currently playing track
+- Display synchronized lyrics for the currently playing track with smooth transitions
+- Interactive Terminal User Interface (TUI) for all commands
+- Customizable UI with configurable colors and animations
+- Smooth animated transitions between different UI screens
 - Automatic token refresh when expired
 
 ## Installation
@@ -68,6 +71,16 @@ sudo mv sprt /usr/local/bin/
 
 ## Usage
 
+### Interactive TUI Menu
+
+The easiest way to use sprt is through its interactive Terminal User Interface (TUI). Simply run:
+
+```bash
+sprt
+```
+
+This will display a menu where you can select from the available commands using the arrow keys and Enter. When you select a command, the application will smoothly transition to the selected screen with an animated effect, providing a more polished and visually appealing experience.
+
 ### Authentication
 
 To initialize the authentication process:
@@ -76,7 +89,7 @@ To initialize the authentication process:
 sprt auth init
 ```
 
-This will prompt you for your Spotify client ID and client secret, then display an authorization URL. Open this URL in your browser to authorize the application. After authorization, you will be redirected to a local callback URL, and the application will exchange the authorization code for an access token.
+This will open a TUI prompt for your Spotify client ID and client secret, then display an authorization URL. You can use Ctrl+V (or Cmd+V on Mac) to paste your credentials into the input fields. When the authorization URL is displayed, you can use Ctrl+Y (or Cmd+Y on Mac) to copy it to your clipboard for easy pasting into your browser. Open the authorization URL in your browser to authorize the application. After authorization, you will be redirected to a local callback URL, and the application will exchange the authorization code for an access token.
 
 ### Getting Currently Playing Track
 
@@ -86,17 +99,23 @@ To get information about your currently playing track:
 sprt current
 ```
 
-This will display the title, artist, and album of the currently playing track.
+This will display the title, artist, and album of the currently playing track in a nicely formatted TUI.
 
 ### Displaying Synchronized Lyrics
 
-To display synchronized lyrics for the currently playing track:
+There are two ways to display lyrics:
 
 ```bash
-sprt lyric pipe-lyric
+# Display lyrics with a nice UI and smooth transitions
+sprt lyric show
+
+# Display lyrics in the terminal (pipe mode)
+sprt lyric pipe
 ```
 
-This will fetch lyrics from lrclib.net and display them synchronized with the music. Press Ctrl+C to stop the lyrics display.
+Both commands will fetch lyrics from lrclib.net and display them synchronized with the music. The `show` command uses a TUI with smooth transitions between lines, while the `pipe` command outputs plain text to the terminal. Press q or Ctrl+C to stop the lyrics display.
+
+For more detailed information about the lyrics feature, including configuration options and animation types, see [LYRICS.md](LYRICS.md).
 
 ## Developer Guide
 
@@ -139,6 +158,7 @@ The application is built using clean architecture principles, with the following
 
 - **Interfaces**: Contains the user interfaces
   - **CLI**: Implements the command-line interface
+  - **TUI**: Implements the Terminal User Interface
   - **HTTP**: Implements the HTTP server for callbacks
 
 ## Troubleshooting
@@ -161,6 +181,13 @@ If you get a "No track currently playing" message:
 If lyrics are not found for a track:
 - The track may not have lyrics available in the lrclib.net database
 - Check if the artist and track names are correct
+
+### UI Configuration
+
+If you want to customize the UI appearance:
+- Edit the configuration file at `~/.sprt/ui_config.json`
+- You can change colors, enable/disable animations, and adjust other display settings
+- See [LYRICS.md](LYRICS.md) for detailed configuration options
 
 ## Linux Desktop Integration
 

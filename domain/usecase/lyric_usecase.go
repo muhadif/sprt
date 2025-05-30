@@ -216,14 +216,20 @@ func (l *lyricUseCase) GetLyricChannel(ctx context.Context, startTimeMs int, pla
 	updateCh := make(chan *LyricUpdate, 10)
 
 	go func() {
-		defer close(updateCh)
-
 		// Get the currently playing track
 		track, err := playerUseCase.GetCurrentlyPlayingDetails(ctx)
 		if err != nil {
-			updateCh <- &LyricUpdate{
-				IsError:  true,
-				ErrorMsg: fmt.Sprintf("Error getting track: %v", err),
+			// Check if the error is "no track currently playing"
+			if err.Error() == "no track currently playing" {
+				updateCh <- &LyricUpdate{
+					IsError:  true,
+					ErrorMsg: "No track currently playing. Please start playing a track on Spotify.",
+				}
+			} else {
+				updateCh <- &LyricUpdate{
+					IsError:  true,
+					ErrorMsg: fmt.Sprintf("Error getting track: %v", err),
+				}
 			}
 			return
 		}
@@ -272,14 +278,23 @@ func (l *lyricUseCase) GetLyricChannel(ctx context.Context, startTimeMs int, pla
 			for {
 				select {
 				case <-ctx.Done():
+					close(updateCh)
 					return
 				case <-ticker.C:
 					// Get the currently playing track
 					track, err := playerUseCase.GetCurrentlyPlayingDetails(ctx)
 					if err != nil {
-						updateCh <- &LyricUpdate{
-							IsError:  true,
-							ErrorMsg: fmt.Sprintf("Error getting track: %v", err),
+						// Check if the error is "no track currently playing"
+						if err.Error() == "no track currently playing" {
+							updateCh <- &LyricUpdate{
+								IsError:  true,
+								ErrorMsg: "No track currently playing. Please start playing a track on Spotify.",
+							}
+						} else {
+							updateCh <- &LyricUpdate{
+								IsError:  true,
+								ErrorMsg: fmt.Sprintf("Error getting track: %v", err),
+							}
 						}
 						continue
 					}
@@ -318,6 +333,9 @@ func (l *lyricUseCase) GetLyricChannel(ctx context.Context, startTimeMs int, pla
 				return
 			case <-internalUpdateCh:
 				if lyrics == nil || len(lyrics.Lines) == 0 {
+					if updateCh == nil {
+						continue
+					}
 					updateCh <- &LyricUpdate{
 						Text: "No lyrics to display.",
 					}

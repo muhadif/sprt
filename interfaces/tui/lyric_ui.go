@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -16,6 +17,7 @@ type LyricModel struct {
 	lyrics         *usecase.Lyrics
 	lines          []string
 	currentLineIdx int
+	prevLineIdx    int
 	width          int
 	height         int
 	uiConfig       *config.UIConfig
@@ -23,6 +25,13 @@ type LyricModel struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
 	err            error
+
+	// Animation state
+	animating       bool
+	animationStep   int
+	animationSteps  int
+	animationType   string
+	animationTicker *time.Ticker
 }
 
 // NewLyricModel creates a new lyric model
@@ -45,12 +54,16 @@ func NewLyricModel(ctx context.Context, startTimeMs int, playerUseCase usecase.P
 	return &LyricModel{
 		lines:          []string{"Loading lyrics..."},
 		currentLineIdx: -1,
+		prevLineIdx:    -1,
 		width:          uiConfig.Lyric.Width,
 		height:         uiConfig.Lyric.Height,
 		uiConfig:       uiConfig,
 		updateCh:       updateCh,
 		ctx:            ctx,
 		cancel:         cancel,
+		animating:      false,
+		animationType:  uiConfig.Lyric.Animation.Type,
+		animationSteps: uiConfig.Lyric.Animation.FadeSteps,
 	}, nil
 }
 
@@ -66,6 +79,9 @@ func (m *LyricModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			m.cancel()
+			if m.animationTicker != nil {
+				m.animationTicker.Stop()
+			}
 			return m, tea.Quit
 		}
 
@@ -75,7 +91,17 @@ func (m *LyricModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.lines = []string{fmt.Sprintf("Error: %s", msg.ErrorMsg)}
 		} else if msg.Lyrics != nil {
 			m.lyrics = msg.Lyrics
-			m.currentLineIdx = msg.LineIndex
+
+			// Store previous line index for animation
+			if m.currentLineIdx != msg.LineIndex {
+				m.prevLineIdx = m.currentLineIdx
+				m.currentLineIdx = msg.LineIndex
+
+				// Start animation if enabled
+				if m.uiConfig.Lyric.Animation.Enabled && m.prevLineIdx != -1 {
+					m.startAnimation()
+				}
+			}
 
 			// Build the lines array with all lyrics
 			if len(m.lyrics.Lines) > 0 {
@@ -87,9 +113,52 @@ func (m *LyricModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		return m, m.waitForUpdate
+
+	case animationTickMsg:
+		if m.animating {
+			m.animationStep++
+			if m.animationStep >= m.animationSteps {
+				m.animating = false
+				if m.animationTicker != nil {
+					m.animationTicker.Stop()
+					m.animationTicker = nil
+				}
+			}
+			return m, nil
+		}
 	}
 
 	return m, nil
+}
+
+// animationTickMsg is a message sent when the animation ticker ticks
+type animationTickMsg struct{}
+
+// startAnimation starts the animation for transitioning between lyric lines
+func (m *LyricModel) startAnimation() {
+	if m.animationTicker != nil {
+		m.animationTicker.Stop()
+	}
+
+	m.animating = true
+	m.animationStep = 0
+
+	// Calculate tick duration based on total animation duration and steps
+	tickDuration := time.Duration(m.uiConfig.Lyric.Animation.DurationMs) * time.Millisecond / time.Duration(m.animationSteps)
+	m.animationTicker = time.NewTicker(tickDuration)
+
+	// Send animation tick messages
+	go func() {
+		for range m.animationTicker.C {
+			if !m.animating {
+				return
+			}
+			cmd := func() tea.Msg {
+				return animationTickMsg{}
+			}
+			tea.NewProgram(m).Send(cmd())
+		}
+	}()
 }
 
 // View renders the model
@@ -98,11 +167,15 @@ func (m *LyricModel) View() string {
 		return fmt.Sprintf("Error: %v\n\nPress q to quit.", m.err)
 	}
 
-	// Create styles for current and other lines
-	currentStyle := lipgloss.NewStyle()
-	otherStyle := lipgloss.NewStyle()
+	// Get base styles from the shared styles
+	titleStyle := GetTitleStyle(m.width)
 
-	// Apply current line style from config
+	// Create styles for current and other lines based on config
+	currentStyle := GetCurrentLineStyle(m.width)
+	otherStyle := GetOtherLineStyle(m.width)
+	prevStyle := GetOtherLineStyle(m.width)
+
+	// Apply custom styling from config if available
 	if m.uiConfig.Lyric.CurrentLineStyle.ForegroundColor != "" {
 		currentStyle = currentStyle.Foreground(lipgloss.Color(m.uiConfig.Lyric.CurrentLineStyle.ForegroundColor))
 	}
@@ -119,26 +192,27 @@ func (m *LyricModel) View() string {
 		currentStyle = currentStyle.Underline(true)
 	}
 
-	// Apply other line style from config
+	// Apply custom styling for other lines from config if available
 	if m.uiConfig.Lyric.OtherLineStyle.ForegroundColor != "" {
 		otherStyle = otherStyle.Foreground(lipgloss.Color(m.uiConfig.Lyric.OtherLineStyle.ForegroundColor))
+		prevStyle = prevStyle.Foreground(lipgloss.Color(m.uiConfig.Lyric.OtherLineStyle.ForegroundColor))
 	}
 	if m.uiConfig.Lyric.OtherLineStyle.BackgroundColor != "" {
 		otherStyle = otherStyle.Background(lipgloss.Color(m.uiConfig.Lyric.OtherLineStyle.BackgroundColor))
+		prevStyle = prevStyle.Background(lipgloss.Color(m.uiConfig.Lyric.OtherLineStyle.BackgroundColor))
 	}
 	if m.uiConfig.Lyric.OtherLineStyle.Bold {
 		otherStyle = otherStyle.Bold(true)
+		prevStyle = prevStyle.Bold(true)
 	}
 	if m.uiConfig.Lyric.OtherLineStyle.Italic {
 		otherStyle = otherStyle.Italic(true)
+		prevStyle = prevStyle.Italic(true)
 	}
 	if m.uiConfig.Lyric.OtherLineStyle.Underline {
 		otherStyle = otherStyle.Underline(true)
+		prevStyle = prevStyle.Underline(true)
 	}
-
-	// Center the text
-	currentStyle = currentStyle.Width(m.width).Align(lipgloss.Center)
-	otherStyle = otherStyle.Width(m.width).Align(lipgloss.Center)
 
 	// Build the view
 	var sb strings.Builder
@@ -146,7 +220,7 @@ func (m *LyricModel) View() string {
 	// Add a title
 	if m.lyrics != nil {
 		title := fmt.Sprintf("%s - %s", m.lyrics.Artist, m.lyrics.Name)
-		sb.WriteString(lipgloss.NewStyle().Bold(true).Width(m.width).Align(lipgloss.Center).Render(title))
+		sb.WriteString(titleStyle.Render(title))
 		sb.WriteString("\n\n")
 	}
 
@@ -158,11 +232,97 @@ func (m *LyricModel) View() string {
 	// Show all lyrics with the current line highlighted
 	for i := startIdx; i < endIdx; i++ {
 		line := m.lines[i]
-		if i == m.currentLineIdx {
-			sb.WriteString(currentStyle.Render(line))
+
+		// Apply animation if enabled and currently animating
+		if m.animating && m.uiConfig.Lyric.Animation.Enabled {
+			if i == m.currentLineIdx {
+				// Current line is fading in
+				if m.animationType == "fade" {
+					// Calculate fade-in progress (0.0 to 1.0)
+					progress := float64(m.animationStep) / float64(m.animationSteps)
+
+					// Interpolate between other style and current style
+					fgColor := interpolateColor(
+						m.uiConfig.Lyric.OtherLineStyle.ForegroundColor,
+						m.uiConfig.Lyric.CurrentLineStyle.ForegroundColor,
+						progress,
+					)
+
+					// Create a style with the interpolated color
+					fadeStyle := lipgloss.NewStyle().
+						Foreground(lipgloss.Color(fgColor)).
+						Width(m.width).
+						Align(lipgloss.Center)
+
+					if m.uiConfig.Lyric.CurrentLineStyle.Bold {
+						fadeStyle = fadeStyle.Bold(progress > 0.5)
+					}
+
+					sb.WriteString(fadeStyle.Render(line))
+				} else if m.animationType == "slide" {
+					// Slide animation
+					slideDistance := m.uiConfig.Lyric.Animation.SlideDistance
+					progress := float64(m.animationStep) / float64(m.animationSteps)
+
+					// Calculate padding based on progress
+					padding := int(float64(slideDistance) * (1.0 - progress))
+					paddedLine := strings.Repeat(" ", padding) + line
+
+					sb.WriteString(currentStyle.Render(paddedLine))
+				} else {
+					// No animation or unknown type
+					sb.WriteString(currentStyle.Render(line))
+				}
+			} else if i == m.prevLineIdx {
+				// Previous line is fading out
+				if m.animationType == "fade" {
+					// Calculate fade-out progress (0.0 to 1.0)
+					progress := float64(m.animationStep) / float64(m.animationSteps)
+
+					// Interpolate between current style and other style
+					fgColor := interpolateColor(
+						m.uiConfig.Lyric.CurrentLineStyle.ForegroundColor,
+						m.uiConfig.Lyric.OtherLineStyle.ForegroundColor,
+						progress,
+					)
+
+					// Create a style with the interpolated color
+					fadeStyle := lipgloss.NewStyle().
+						Foreground(lipgloss.Color(fgColor)).
+						Width(m.width).
+						Align(lipgloss.Center)
+
+					if m.uiConfig.Lyric.CurrentLineStyle.Bold {
+						fadeStyle = fadeStyle.Bold(progress < 0.5)
+					}
+
+					sb.WriteString(fadeStyle.Render(line))
+				} else if m.animationType == "slide" {
+					// Slide animation
+					slideDistance := m.uiConfig.Lyric.Animation.SlideDistance
+					progress := float64(m.animationStep) / float64(m.animationSteps)
+
+					// Calculate padding based on progress
+					padding := int(float64(slideDistance) * progress)
+					paddedLine := strings.Repeat(" ", padding) + line
+
+					sb.WriteString(prevStyle.Render(paddedLine))
+				} else {
+					// No animation or unknown type
+					sb.WriteString(otherStyle.Render(line))
+				}
+			} else {
+				sb.WriteString(otherStyle.Render(line))
+			}
 		} else {
-			sb.WriteString(otherStyle.Render(line))
+			// No animation
+			if i == m.currentLineIdx {
+				sb.WriteString(currentStyle.Render(line))
+			} else {
+				sb.WriteString(otherStyle.Render(line))
+			}
 		}
+
 		sb.WriteString("\n")
 	}
 
@@ -170,6 +330,27 @@ func (m *LyricModel) View() string {
 	sb.WriteString("\nPress q to quit")
 
 	return sb.String()
+}
+
+// interpolateColor interpolates between two hex colors
+func interpolateColor(startColor, endColor string, progress float64) string {
+	// Parse hex colors
+	var startR, startG, startB, endR, endG, endB int
+	fmt.Sscanf(startColor, "#%02x%02x%02x", &startR, &startG, &startB)
+	fmt.Sscanf(endColor, "#%02x%02x%02x", &endR, &endG, &endB)
+
+	// Interpolate
+	r := int(float64(startR) + progress*float64(endR-startR))
+	g := int(float64(startG) + progress*float64(endG-startG))
+	b := int(float64(startB) + progress*float64(endB-startB))
+
+	// Clamp values
+	r = max(0, min(255, r))
+	g = max(0, min(255, g))
+	b = max(0, min(255, b))
+
+	// Return hex color
+	return fmt.Sprintf("#%02x%02x%02x", r, g, b)
 }
 
 // waitForUpdate waits for an update from the lyric channel

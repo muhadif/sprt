@@ -45,8 +45,7 @@ test:
 	$(GOTEST) -v ./...
 	@echo "Tests complete"
 
-install: build
-	@echo "Installing sprt to $(INSTALL_PATH)/$(BINARY_NAME)..."
+install:
 	mkdir -p $(CONFIG_DIR)
 	cp $(BINARY_NAME) $(INSTALL_PATH)/$(BINARY_NAME)
 	@echo "Installation complete"
